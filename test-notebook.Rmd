@@ -1,6 +1,8 @@
 ---
 title: "Test Notebook"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 test notebook to test github stuff
