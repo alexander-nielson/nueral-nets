@@ -1,0 +1,79 @@
+---
+title: "R Notebook"
+output: github_document
+---
+This is a simple R program ot build, train, and test a regression NN on the Boston MASS data set. 
+
+First, load the necessary packages
+```{r}
+library("neuralnet")
+library(MASS)
+```
+
+Set the seed for reproducibility. 
+```{r}
+set.seed(1)
+```
+
+Load the data and scale it
+```{r}
+data = Boston
+max_data <- apply(data, 2, max)
+min_data <- apply(data, 2, min)
+data_scaled <- scale(data,center = min_data, scale = max_data - min_data)
+```
+
+split the data using a 70-30 split
+
+```{r}
+index = sample(1:nrow(data),round(0.70*nrow(data)))
+train_data <- as.data.frame(data_scaled[index,])
+test_data <- as.data.frame(data_scaled[-index,])
+```
+
+To save time and avoid having to write out all the variables, we get a names vector, and then create a formula. inside the formula so that medv is the response. we then select all the other 'names'/predictors in the names vector and put a '+' so that we can  fully construct the "response ~ var1+var2 +..." format
+```{r}
+n = names(data)
+f = as.formula(paste("medv ~", paste(n[!n %in% "medv"], collapse = " + ")))
+```
+
+Create a neural net
+```{r}
+net_data = neuralnet(f,data=train_data,hidden=10,linear.output=T)
+```
+
+plot the neural net
+```{r}
+plot(net_data)
+```
+
+next we are interested to see how well or NN performs. To do this, we first get the predicted medb of testing data using the neural network. 
+```{r}
+predict_net_test <- compute(net_data,test_data[,1:13])
+```
+
+
+```{r}
+predict_net_test_start <- predict_net_test$net.result*(max(data$medv)-min(data$medv))+min(data$medv)
+```
+
+```{r}
+test_start <- as.data.frame((test_data$medv)*(max(data$medv)-min(data$medv))+min(data$medv))
+```
+
+```{r}
+MSE.net_data <- sum((test_start - predict_net_test_start)^2)/nrow(test_start)
+```
+
+
+
+```{r}
+Regression_Model <- lm(medv~., data=data)
+summary(Regression_Model)
+test <- data[-index,]
+predict_lm <- predict(Regression_Model,test)
+MSE.lm <- sum((predict_lm - test$medv)^2)/nrow(test)
+MSE.net_data
+MSE.lm
+
+```
