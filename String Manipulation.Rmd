@@ -1,0 +1,482 @@
+---
+title: "Manipulating Strings"
+output: html_notebook
+---
+
+It is often important to have the ability to manipulate strings for feature selection and NLP. This notebook will contain common examples of complex string manipulations and wrangling. 
+
+# Load necessary packages and data
+
+```{r}
+library(tidyverse)
+```
+
+# String basics
+
+##str_length()
+To get the length of a string simply use the "str_length" function
+```{r}
+str_length("Jimbo Jenkins")
+str_length(c("abc", "Alexander Nielosn ML", NA))
+```
+
+##str_c()
+We can combine strings using the "str_c" function
+```{r}
+str_c("a", "b","c","d")
+```
+
+If we want to provde a seperator between words, we include the "sep" argument
+```{r}
+str_c("(x", "y)", sep = ", ")
+str_c("h", "e","l","l","o", sep = " ")
+```
+
+str_c() is vectorised, so it will automatically recycle shorter vectors to the same length as the longest
+
+```{r}
+str_c("Sir ", c("Alexander", "Bertrand", "Chaddwick"), " of York")
+```
+```{r}
+str_c(c("Sir ", "Madam "), c("Alexander", "Chaddwick"), c(" of York"," of canterburry"))
+```
+
+Objects of length 0 are silently dropped. This is particularly useful in conjunction with "if" statements. For example:
+
+```{r}
+fname <- "Alex"
+lname <- "Nielson "
+cool <- FALSE
+
+str_c(
+  fname, " ", lname,
+  if (cool) " is cool.",
+  if (!cool) " is not cool",
+  "."
+)
+```
+
+We can combine or collapse strings together using the "collaphse" argument
+
+```{r}
+str_c(c("a", "b", "c", "1"), collapse = ", ")
+str_c(c("a", "b", "c", "1"), collapse = ". ")
+str_c(c("a", "b", "c", "1"), collapse = "- ")
+```
+
+##str_sub()
+You can extract parts of a string using str_sub(), ie : getting a substring
+```{r}
+animals <- c("Cattle", "Donkey", "Bear")
+str_sub(animals, 1, 3)
+```
+
+Note that str_sub() will gather as much as possible if the string is shorter than the "start" and "end" arguments.
+```{r}
+str_sub("abcdefg", 1, 5)
+str_sub("abc", 1, 5)
+```
+
+##Locales 
+
+We can use str_to_upper to make the string entirely uppercase.
+We can use str_to_lower to make the string entirely lowercase.
+We can use str_to_tyiel to make the string entirely titlecase.
+```{r}
+str_to_upper(c("hello", "howdy", "hi"))
+str_to_lower(c("hElLo", "hoWdy", "hI"))
+str_to_title(c("heLlo", "hoWdY", "hI"))
+```
+
+#Regular Expressions and pattern matching
+
+##Basic Matching of strings
+
+To learn regular expressions, we’ll use str_view() and str_view_all(). These functions take a character vector and a regular expression, and show you how they match
+```{r}
+x <- c("apple", "banana", "pear")
+str_view(x, "an")
+```
+
+using the "." character matches any character except a new line
+```{r}
+str_view(x, ".a.")
+```
+
+```{r}
+str_view(x, "a.")
+```
+
+```{r}
+str_view(x, ".a")
+```
+
+We can also use "^" to match to the beging of a string.
+```{r}
+str_view(x, "^a")
+```
+and "$" to match to the end of a string
+```{r}
+str_view(x, "a$")
+```
+
+Anchors are useful for only getting a full string. 
+For instance: 
+```{r}
+x <- c("apple pie", "apple", "apple cake")
+str_view(x, "apple")
+```
+
+We can see that the apple in both "apple pie" and "apple cake" is matched, while sometimes we might want this, there may be other instances where we only want "apple" and not "apple pie" or "apple cake"
+
+Anchors allow us to fix this by including them at the end of the string like this: 
+```{r}
+str_view(x, "^apple$")
+```
+
+##Additional important identifiers are 
+\d: which will match any digit.
+\s: which matches any whitespace (e.g. space, tab, newline).
+[abc]: which matches a, b, or c.
+[^abc]: which matches anything except a, b, or c.
+
+
+Also, as Hadley Wickham notes "A character class containing a single character is a nice alternative to backslash escapes when you want to include a single metacharacter in a regex. Many people find this more readable."
+
+```{r}
+str_view(c("abc", "a.c", "a*c", "a c"), "a[.]c")
+```
+```{r}
+str_view(c("abc", "a.c", "a*c", "a c"), "a[*]c")
+```
+```{r}
+str_view(c("abc", "a.c", "a*c", "a c"), "a[ ]c")
+```
+
+Note that "a few characters have special meaning even inside a character class and must be handled with backslash escapes: ] \ ^ and -."
+
+We must also use alteration using the "|" character. It is good practice to surround with "()" so to easily see what characters are being potentially alternated. 
+
+```{r}
+str_view(c("grey", "gray"), "gr(e|a)y")
+```
+```{r}
+str_view(c("Hello", "Hallo"), "H(e|a)llo")
+```
+
+```{r}
+str_view(c("elpokd", "abcd"), "(e|a)")
+```
+
+We can now do some cool things like find all words that start with vowels
+```{r}
+x <-c("apple","banana","updog","october", "pow")
+str_view(x,"^[aeiou]")
+```
+
+We can find consonants
+```{r}
+x <-c("apple","banana","dtg","plbn", "QWDRTY")
+str_view(x,"[^aeiou]")
+```
+
+##Repitition 
+We can build upon our previous knowledge by restricting allowed repition. 
+
+For example
+?: 0 or 1
++: 1 or more
+*: 0 or more
+
+Lets do some examples:
+To show the basic idea, i will make a string of ten "A"s
+```{r}
+x <- "AAAAAAAAAA"
+```
+
+```{r}
+#? will check for 0 or 1
+str_view(x, "A?")
+str_view(x, "AA?")
+str_view(x, "B?")
+```
+
+```{r}
+#+ will check for 1 or more
+str_view(x, "A+")
+str_view(x, "AA+") # unnecessary 
+str_view(x, "B+")
+```
+
+```{r}
+#* will check for 0 or more
+str_view(x, "A*")
+str_view(x, "AA*") # unnecessary 
+str_view(x, "B*")
+```
+
+
+We can be more precise in how many we are looking for using the following: 
+{n}: exactly n
+{n,}: n or more
+{n,m}: between n and m
+
+```{r}
+str_view(x, "A{2}")
+str_view(x, "A{5}")
+str_view(x, "A{10}")
+```
+
+```{r}
+str_view(x, "A{2,}")
+str_view(x, "A{5,}") # redundant
+str_view(x, "A{10,}") # redundant
+```
+
+```{r}
+str_view(x, "A{1,2}")
+str_view(x, "A{4,5}")
+str_view(x, "A{6,7}")
+```
+
+Note that the following (?,+,*) are equivalent in {n,m} form
+```{r}
+str_view(x, "A?")#? will check for 0 or 1
+str_view(x, "A{0,1}")
+```
+
+```{r}
+str_view(x, "A+")#+ will check for 1 or more
+str_view(x, "A{1,}")
+```
+
+```{r}
+str_view(x, "A*")#* will check for 0 or more
+str_view(x, "A{0,}")
+```
+
+
+## important notes
+
+when calling str_view() the function automatically wraps "blah" into a regex function. But we can manually do so
+
+```{r}
+str_view(x, "A") # is short for :
+str_view(x, regex("A"))
+```
+
+this is important for other potential calls like if we want to ignore the case of the string
+
+```{r}
+x <- c("black", "BLACK")
+str_view(x, regex("a"))
+```
+```{r}
+x <- c("black", "BLACK")
+str_view(x, regex("a", ignore_case = TRUE))
+```
+
+We can use the boundary() function to seperate words. We can use it in many stringr functions. 
+```{r}
+x <- "Hello my name is Alex"
+str_view_all(x, boundary("word"))
+str_extract_all(x, boundary("word"))
+```
+
+#Detecting Matches
+
+I will be using the words data from the stringr package for more examples: 
+```{r}
+length(words)
+head(words)
+```
+
+The str_detect() function is used to determine if there exists a match. it returns a logical vector the same length as the input:
+```{r}
+x <- c("apple", "banana", "pear")
+str_detect(x, "e")
+```
+
+we could for instance check to see how many strings in the words data start with the letter p. We can do this by first determining how many have True, and then sum them.
+
+```{r}
+sum(str_detect(words, "^p"))
+```
+
+We could also check the average number of words which end with a vowel
+```{r}
+mean(str_detect(words, "[aeiou]$"))
+```
+
+
+```{r}
+# Find all words containing at least one vowel, and negate
+no_vowels_1 <- !str_detect(words, "[aeiou]")
+# Find all words consisting only of consonants (non-vowels)
+no_vowels_2 <- str_detect(words, "^[^aeiou]+$")
+identical(no_vowels_1, no_vowels_2)
+```
+
+We can also use str_detect to select words 
+```{r}
+words[str_detect(words, "x$")]
+```
+
+we can also do this with the str_subset() wrapper
+```{r}
+str_subset(words, "x$")
+```
+
+If we have a dataframe or tibble we can use this via filter()
+
+```{r}
+df <- tibble(
+  word = words, 
+  i = seq_along(word)
+)
+df %>% 
+  filter(str_detect(word, "x$"))
+```
+
+#str_count()
+
+we can use str_count to get a count of matches instead of a TRUE or FALSE
+```{r}
+x <- c("apple", "banana", "pear")
+str_count(x, "a")
+```
+
+We can do that to find the average number of vowels in a word:
+```{r}
+mean(str_count(words, "[aeiou]"))
+```
+
+We can also use mutate 
+```{r}
+df %>% 
+  mutate(
+    vowels = str_count(word, "[aeiou]"),
+    consonants = str_count(word, "[^aeiou]")
+  )
+```
+
+
+#Extract Matches
+
+I will be using the sentences data from the stringr package. it is included in tidyverse call. 
+```{r}
+length(sentences)
+head(sentences)
+```
+
+
+Lets search through them and find sentences that contain colors
+First I create a vector of color strings. Remember, "|" allows for essentially an or gate logic.
+```{r}
+colors <- c("red", "orange", "yellow", "green", "blue", "purple")
+color_match <- str_c(colors, collapse = "|")
+color_match
+
+has_color <- str_subset(sentences, color_match)
+matches <- str_extract(has_color, color_match)
+head(matches)
+```
+
+
+#Grouping matches
+
+You can also use parentheses to extract parts of a complex match. For example, imagine we want to extract nouns from the sentences.
+
+Hadley Wickham when doing this example uses the heuristic that a non is simply something that follows "a" or "the".
+
+a sequence of at least one character that isn’t a space.
+
+Notice that str_extract actually gives the entire match
+
+```{r}
+noun <- "(a|the) ([^ ]+)"
+
+has_noun <- sentences %>%
+  str_subset(noun) %>%
+  head(10)
+has_noun %>% 
+  str_extract(noun)
+```
+
+whereas str_match() reutrns each component
+
+```{r}
+has_noun %>% 
+  str_match(noun)
+```
+
+if we are using a tibble, it is easier to use tidyr::extract
+
+
+```{r}
+tibble(sentence = sentences) %>% 
+  tidyr::extract(
+    sentence, c("article", "noun"), "(a|the) ([^ ]+)", 
+    remove = FALSE
+  )
+```
+
+WE can also do things like "Find all words that come after a “number” like “one”, “two”, “three” etc. Pull out both the number and the word."
+
+```{r}
+tibble(sentence = sentences) %>%
+    tidyr::extract(
+    sentence,
+    c("number", "word"),
+    "(one|two|three|four|five|six|seven|eight|nine|ten) ([^ ]+)",
+    remove = FALSE
+    )
+```
+
+
+## Replacing Matches
+str_replace()  is useful for replacing matches with a new string.
+str_replace_all() allow you to replace matches with new strings. 
+
+```{r}
+x <- c("apple", "pear", "banana")
+str_replace(x, "[aeiou]", "_")
+str_replace_all(x, "[aeiou]", "_")
+```
+
+We can also specificy different types of replacements
+```{r}
+x <- c("1 house", "2 cars", "3 people")
+str_replace_all(x, c("1" = "one", "2" = "two", "3" = "three"))
+```
+
+
+We can use str_plit() to split a string apart
+
+```{r}
+sentences %>%
+  head(5) %>% 
+  str_split(" ")
+```
+we can use simplify to create a matrix
+
+```{r}
+sentences %>%
+  head(5) %>% 
+  str_split(" ", simplify = TRUE)
+```
+
+```{r}
+x <- "This is a sentence.  This is another sentence."
+str_view_all(x, boundary("word"))
+```
+
+```{r}
+str_split(x, " ")[[1]]
+```
+
+
+```{r}
+str_split(x, boundary("word"))[[1]]
+```
+
